@@ -1,5 +1,5 @@
 # Zigbee-status-panel
-Battery powered Zigbee status panel for home automation
+Battery powered Zigbee status panel for home automation with e-ink display.
 <br><br>
 Still in beta testing phase!
 <br><br>
