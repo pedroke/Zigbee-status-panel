@@ -61,16 +61,18 @@ uint8 pressedFR = 0;
  */
 static void displayInit(void);
 static void clearDisplay(void);
-static void layoutBaseContent(void);
+static void layoutBaseContent(int init);
+static void transferOldTemperatures(void);
+static void transferOldWarnings(void);
 static void layoutTemperatures(void);
 static void layoutWarnings(void);
-static void refreshDisplay(void);
+static void refreshDisplay(int init);
 static uint8 isChangedContent(void);
 static void sp_sendReport(void);
 static void processDisplayedAttributes(void);
 static void setErrorCode(void);
 static void configureInterrupts(void);
-static void configureUnusedPorts(void);
+static void turnOffPorts(void);
 
 static void zclStatusPanel_ProcessCommissioningStatus(bdbCommissioningModeMsg_t *bdbCommissioningModeMsg);
 
@@ -149,10 +151,8 @@ void zclStatusPanel_Init( byte task_id )
   bdb_RegisterCommissioningStatusCB( zclStatusPanel_ProcessCommissioningStatus );
   
   configureInterrupts();
-  configureUnusedPorts();
-  SPIInit();
   displayInit();
-  refreshDisplay();
+  refreshDisplay(1);
   
   bdb_StartCommissioning(BDB_COMMISSIONING_REJOIN_EXISTING_NETWORK_ON_STARTUP);
    
@@ -165,6 +165,7 @@ void displayInit(void) {
   epdInit();
   clearDisplay();
   epdSleep();
+  turnOffPorts();
 }
 
 void clearDisplay(void) {
@@ -176,27 +177,50 @@ void clearDisplay(void) {
   epdDisplayFrame();
 }
 
-void layoutBaseContent(void) {
-  epdSetFrameMemoryXY(INDOOR_ICON, 100, 0, 24, 24);
-  epdSetFrameMemoryXY(OUTDOOR_ICON, 100, 146, 24, 24);
+void layoutBaseContent(int init) {
+  if(init) {
+      epdSetFrameMemoryXY(INDOOR_ICON, 100, 0, 24, 24);
+      epdSetFrameMemoryXY(OUTDOOR_ICON, 100, 146, 24, 24);
+  } else {
+      epdSetFrameMemoryXYBase(INDOOR_ICON, 100, 0, 24, 24);
+      epdSetFrameMemoryXYBase(OUTDOOR_ICON, 100, 146, 24, 24);   
+  }
 
   char degreesString[] = {'D', 'C', '\0'};
-  printString(75, 96, degreesString);
-  printString(75, 240, degreesString);
-  
-  epdSetFrameMemoryXY(HL, 34, 0, 8, 288);
-  epdSetFrameMemoryXY(VL, 38, 138, 88, 8);  
+  if(!init) {
+      printString(75, 96, degreesString, 1);
+      printString(75, 240, degreesString, 1);
+  }
+
+  printString(75, 96, degreesString, 0);
+  printString(75, 240, degreesString, 0);
+
+  if(init) {
+      epdSetFrameMemoryXY(HL, 32, 0, 8, 288);
+      epdSetFrameMemoryXY(VL, 32, 140, 88, 1);  
+  } else {
+      epdSetFrameMemoryXYBase(HL, 32, 0, 8, 288);
+      epdSetFrameMemoryXYBase(VL, 32, 140, 88, 1);  
+  }
 }
 
-void refreshDisplay(void) {
-    epdInitPartial();
+void refreshDisplay(int init) {
+    epdReInit();
+    epdClearFrameMemoryBase();
     
-    layoutBaseContent();
+    layoutBaseContent(init);
+    if(!init) {
+        transferOldTemperatures();
+    }
     layoutTemperatures();
+    if(!init) {
+        transferOldWarnings();
+    }
     layoutWarnings();
    
     epdDisplayFramePartial();
     epdSleep();
+    turnOffPorts();
 }
 
 uint8 isChangedContent() {
@@ -207,6 +231,39 @@ uint8 isChangedContent() {
         (lastState != zclStatusPanel_State) ||
         (lastSync != zclStatusPanel_NoSync) ||
         (batteryProblem != 0);
+}
+
+void transferOldTemperatures() {
+  char tempString[] = {' ', ' ', ' ', '.', ' ' , '\0'};
+  
+  //INSIDE TEMP
+  if(lastSync) {
+    tempString[0] = 'E';
+  } else if(lastInsideTemperature < 0) {
+    tempString[0] = '-';
+  }
+  tempString[1] = abs(lastInsideTemperature) / 100 % 10 + '0';
+  if(tempString[1] == '0') {
+    tempString[1] = ' ';
+  }
+  tempString[2] = abs(lastInsideTemperature) / 10 % 10 + '0';
+  tempString[4] = abs(lastInsideTemperature) % 10 + '0';
+  printString(40, 0, tempString, 1);
+  
+  // OUTSIDE TEMP
+  if(lastSync) {
+    tempString[0] = 'E';
+  } else if(lastOutsideTemperature < 0) {
+    tempString[0] = '-';
+  }
+ 
+  tempString[1] = abs(lastOutsideTemperature) / 100 % 10 + '0';
+  if(tempString[1] == '0') {
+    tempString[1] = ' ';
+  }
+  tempString[2] = abs(lastOutsideTemperature) / 10 % 10 + '0'; 
+  tempString[4] = abs(lastOutsideTemperature) % 10 + '0';
+  printString(40, 154, tempString, 1);
 }
 
 void layoutTemperatures() {
@@ -224,7 +281,7 @@ void layoutTemperatures() {
   }
   tempString[2] = abs(zclStatusPanel_InsideTemperature) / 10 % 10 + '0';
   tempString[4] = abs(zclStatusPanel_InsideTemperature) % 10 + '0';
-  printString(40, 0, tempString);
+  printString(40, 0, tempString, 0);
   
   lastInsideTemperature = zclStatusPanel_InsideTemperature;
 
@@ -241,9 +298,44 @@ void layoutTemperatures() {
   }
   tempString[2] = abs(zclStatusPanel_OutsideTemperature) / 10 % 10 + '0'; 
   tempString[4] = abs(zclStatusPanel_OutsideTemperature) % 10 + '0';
-  printString(40, 154, tempString);
+  printString(40, 154, tempString, 0);
   
   lastOutsideTemperature = zclStatusPanel_OutsideTemperature;
+}
+
+void transferOldWarnings() {
+    if(lastWarnings & 1) {
+      epdSetFrameMemoryXYBase(WINDOW_ICON, 5, 10, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 10, 24, 24);
+    }
+    if(lastWarnings & 2) {
+      epdSetFrameMemoryXYBase(DROP_ICON, 5, 40, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 40, 24, 24);
+    }
+    if(lastWarnings & 4) {
+      epdSetFrameMemoryXYBase(FIRE_ICON, 5, 70, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 70, 24, 24);
+    }
+    if(lastWarnings & 8) {
+      epdSetFrameMemoryXYBase(TAP_ICON, 5, 100, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 100, 24, 24);
+    }
+   
+    if(lastSync) {
+      epdSetFrameMemoryXYBase(SYNC_ICON, 5, 130, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 130, 24, 24);
+    }
+    
+    if(lastState == 6) {
+      epdSetFrameMemoryXYBase(ONLINE_ICON, 5, 270, 24, 24);
+    } else {
+      epdClearFrameMemoryXYBase(5, 270, 24, 24);
+    }    
 }
 
 void layoutWarnings() {
@@ -292,7 +384,7 @@ void layoutWarnings() {
 
 void processDisplayedAttributes(void) {
   if(isChangedContent()) {
-      refreshDisplay();
+      refreshDisplay(0);
   }
 }
 
@@ -391,7 +483,7 @@ uint16 zclStatusPanel_event_loop( uint8 task_id, uint16 events )
   
   if ( events & STATUSPANEL_REFRESH_DISPLAY_EVT ) {
     displayInit();
-    refreshDisplay();
+    refreshDisplay(0);
   
     osal_start_timerEx( zclStatusPanel_TaskID, STATUSPANEL_REFRESH_DISPLAY_EVT, REFRESH_DISPLAY_INTERVAL );
 
@@ -432,7 +524,21 @@ void setErrorCode(void) {
   processDisplayedAttributes();
 }
 
-void configureUnusedPorts(void) {
+void turnOffPorts(void) {
+  // set all ports except the one with interrupt enabled to tristate
+  P0SEL &= B00000000;  // P0 GPIO
+  P0DIR &= B00000000; // P0 input
+  P0INP &= B00000000; // P0 pullup
+  
+  P1SEL &= B00000000;  // P1 GPIO
+  P1DIR &= B00000010; // P1 input, except EPD reset
+  P1INP &= B00000000; // P1 pullup
+  
+  P2SEL &= B11111000;  // P2 GPIO reset
+  P2DIR &= B11100000; // P2 input
+  P2INP &= B00000000; // P2 pullup
+  
+  P1_1 = 0; // turn off the display
 }
 
 void configureInterrupts(void) {

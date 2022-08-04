@@ -14,6 +14,7 @@ static void delayMs(unsigned int delaytime);
 
 void epdInit(void)
 {
+  SPIInit();
   epdReset();
   delayMs(100);
   waitUntilIdle();
@@ -37,8 +38,62 @@ void epdInit(void)
   waitUntilIdle();
 }
 
-void epdInitPartial(void) {
+void epdReInit(void)
+{
+  SPIInit();
   epdReset();
+  delayMs(100);
+  waitUntilIdle();
+  epdSendCommand(SW_RESET);
+  waitUntilIdle();   
+  
+  epdSendCommand(DRIVER_OUTPUT_CONTROL);
+  epdSendData(0x27);
+  epdSendData(0x01);
+  epdSendData(0x00);
+        
+  epdSendCommand(DATA_ENTRY_MODE_SETTING);
+  epdSendData(0x03);
+  
+  epdSendCommand(DISPLAY_UPDATE_CONTROL_1);
+  epdSendData(0x00);		
+  epdSendData(0x80);					
+
+  epdSetLut(lut_partial);
+  epdSendCommand(OTP_SELECTION_CONTROL_1); 
+  epdSendData(0x00);  
+  epdSendData(0x00);  
+  epdSendData(0x00);  
+  epdSendData(0x00); 
+  epdSendData(0x00);  
+  epdSendData(0x40);  
+  epdSendData(0x00);  
+  epdSendData(0x00);   
+  epdSendData(0x00);  
+  epdSendData(0x00);
+ 
+  epdSendCommand(BORDER_WAVEFORM_CONTROL);
+  epdSendData(0x80);	
+
+  epdSendCommand(DISPLAY_UPDATE_CONTROL_2); 
+  epdSendData(0xC0);   
+	
+  epdSendCommand(MASTER_ACTIVATION); 
+  waitUntilIdle();  
+	
+  epdSendCommand(BORDER_WAVEFORM_CONTROL);
+  epdSendData(0x80);	
+  
+  epdSetMemoryArea(0, 0, epd_width - 1, epd_height - 1);
+  epdSetMemoryPointer(0, 0);
+  waitUntilIdle();
+}
+
+void epdInitPartial(void) {
+  SPIInit();
+  epdReset();
+  delayMs(100);
+  waitUntilIdle();
   epdSetLut(lut_partial);
   epdSendCommand(OTP_SELECTION_CONTROL_1); 
   epdSendData(0x00);  
@@ -96,6 +151,10 @@ void epdClearFrameMemoryBase(void) {
     for (int i = 0; i < 4736; i++) {
         epdSendData(0XFF);
     }
+        
+    epdSetMemoryArea(0, 0, epd_width - 1, epd_height - 1);
+    epdSetMemoryPointer(0, 0);
+
     epdSendCommand(WRITE_RAM2);
     for (int i = 0; i < 4736; i++) {
         epdSendData(0XFF);
@@ -146,6 +205,51 @@ void epdClearFrameMemoryXY(int x, int y, int image_width, int image_height) {
     } 
 }
 
+void epdClearFrameMemoryXYBase(int x, int y, int image_width, int image_height) { 
+    int x_end;
+    int y_end;    
+
+    if (
+        x < 0 || image_width < 0 ||
+        y < 0 || image_height < 0
+    ) {
+        return;
+    }
+    // x point must be the multiple of 8 or the last 3 bits will be ignored 
+    x &= 0xF8;
+    image_width &= 0xF8;
+    if (x + image_width >= epd_width) {
+        x_end = epd_width - 1;
+    } else {
+        x_end = x + image_width - 1;
+    }
+    if (y + image_height >= epd_height) {
+        y_end = epd_height - 1;
+    } else {
+        y_end = y + image_height - 1;
+    }
+    
+    epdSetMemoryArea(x, y, x_end, y_end);
+    epdSetMemoryPointer(x, y);
+    
+    epdSendCommand(WRITE_RAM);
+    for (int j = 0; j < y_end - y + 1; j++) {
+        for (int i = 0; i < (x_end - x + 1) / 8; i++) {
+          epdSendData(0XFF);
+        }
+    } 
+
+    epdSetMemoryArea(x, y, x_end, y_end);
+    epdSetMemoryPointer(x, y);
+
+    epdSendCommand(WRITE_RAM2);
+    for (int j = 0; j < y_end - y + 1; j++) {
+        for (int i = 0; i < (x_end - x + 1) / 8; i++) {
+          epdSendData(0XFF);
+        }
+    } 
+}
+
 void epdSetFrameMemoryXY(const unsigned char* image_buffer, int x, int y, int image_width, int image_height) { 
     int x_end;
     int y_end;    
@@ -182,6 +286,52 @@ void epdSetFrameMemoryXY(const unsigned char* image_buffer, int x, int y, int im
     }
 }
 
+void epdSetFrameMemoryXYBase(const unsigned char* image_buffer, int x, int y, int image_width, int image_height) { 
+    int x_end;
+    int y_end;    
+
+    if (
+        image_buffer == NULL ||
+        x < 0 || image_width < 0 ||
+        y < 0 || image_height < 0
+    ) {
+        return;
+    }
+    // x point must be the multiple of 8 or the last 3 bits will be ignored 
+    x &= 0xF8;
+    image_width &= 0xF8;
+    if (x + image_width >= epd_width) {
+        x_end = epd_width - 1;
+    } else {
+        x_end = x + image_width - 1;
+    }
+    if (y + image_height >= epd_height) {
+        y_end = epd_height - 1;
+    } else {
+        y_end = y + image_height - 1;
+    }
+    
+    epdSetMemoryArea(x, y, x_end, y_end);
+    epdSetMemoryPointer(x, y);
+     
+    epdSendCommand(WRITE_RAM);
+    for (int j = 0; j < y_end - y + 1; j++) {
+        for (int i = 0; i < (x_end - x + 1) / 8; i++) {
+            epdSendData(image_buffer[i + j * (image_width / 8)]);
+        }
+    }
+    
+    epdSetMemoryArea(x, y, x_end, y_end);
+    epdSetMemoryPointer(x, y);
+ 
+    epdSendCommand(WRITE_RAM2);
+    for (int j = 0; j < y_end - y + 1; j++) {
+        for (int i = 0; i < (x_end - x + 1) / 8; i++) {
+            epdSendData(image_buffer[i + j * (image_width / 8)]);
+        }
+    }
+}
+
 void epdSetFrameMemoryBase(const unsigned char* image_buffer) {
     epdSetMemoryArea(0, 0, epd_width - 1, epd_height - 1);
     epdSetMemoryPointer(0, 0);
@@ -189,6 +339,10 @@ void epdSetFrameMemoryBase(const unsigned char* image_buffer) {
     for (int i = 0; i < 4736; i++) {
         epdSendData((uint8)(image_buffer[i]));
     }
+    
+    epdSetMemoryArea(0, 0, epd_width - 1, epd_height - 1);
+    epdSetMemoryPointer(0, 0);
+
     epdSendCommand(WRITE_RAM2);
     for (int i = 0; i < 4736; i++) {
         epdSendData((uint8)(image_buffer[i]));

@@ -39,6 +39,7 @@ extern    unsigned long epd_height;
 
 extern    void epdInit(void);
 extern    void epdInitPartial(void);
+extern    void epdReInit(void);
 
 extern    void epdSendCommand(unsigned char command);
 extern    void epdSendData(unsigned char data);
@@ -46,6 +47,7 @@ extern    void WaitUntilIdle(void);
 extern    void epdReset(void);
 
 extern    void epdSetFrameMemoryXY(const unsigned char* image_buffer,int x, int y, int image_width, int image_height);
+extern    void epdSetFrameMemoryXYBase(const unsigned char* image_buffer, int x, int y, int image_width, int image_height);
 
 extern    void epdSetFrameMemory(const unsigned char* image_buffer);
 extern    void epdSetFrameMemoryBase(const unsigned char* image_buffer);
@@ -53,6 +55,7 @@ extern    void epdSetFrameMemoryBase(const unsigned char* image_buffer);
 extern    void epdClearFrameMemory(void);
 extern    void epdClearFrameMemoryBase(void);
 extern    void epdClearFrameMemoryXY(int x, int y, int image_width, int image_height);
+extern    void epdClearFrameMemoryXYBase(int x, int y, int image_width, int image_height);
 
 extern    void epdDisplayFrame(void);
 extern    void epdDisplayFramePartial(void);

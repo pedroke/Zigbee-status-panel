@@ -2,66 +2,130 @@
 #include "epddriver.h"
 #include "characters.h"
 
-void printString(int x, int y, const char* string) {
+void printString(int x, int y, const char* string, int isOld) {
   const char* p_string = string;
   int counter = 0;
   
   while (*p_string != 0) {
-    printChar(x, y+counter*24, *p_string);
+    printChar(x, y+counter*24, *p_string, isOld);
     counter++;
     p_string++;
   }
 }
 
-void printChar(int x, int y, char c) {
+void printChar(int x, int y, char c, int isOld) {
   switch(c) {
     case '0':
-      epdSetFrameMemoryXY(ZERO, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(ZERO, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(ZERO, x, y, 48, 24);
+      }
       break;
     case '1':
-      epdSetFrameMemoryXY(ONE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(ONE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(ONE, x, y, 48, 24);
+      }
       break;
     case '2':
-      epdSetFrameMemoryXY(TWO, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(TWO, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(TWO, x, y, 48, 24);
+      }
       break;
     case '3':
-      epdSetFrameMemoryXY(THREE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(THREE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(THREE, x, y, 48, 24);
+      }
       break;
     case '4':
-      epdSetFrameMemoryXY(FOUR, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(FOUR, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(FOUR, x, y, 48, 24);
+      }
       break;
     case '5':
-      epdSetFrameMemoryXY(FIVE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(FIVE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(FIVE, x, y, 48, 24);
+      }
       break;
     case '6':
-      epdSetFrameMemoryXY(SIX, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(SIX, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(SIX, x, y, 48, 24);
+      }
       break;
     case '7':
-      epdSetFrameMemoryXY(SEVEN, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(SEVEN, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(SEVEN, x, y, 48, 24);
+      }
       break;
     case '8':
-      epdSetFrameMemoryXY(EIGHT, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(EIGHT, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(EIGHT, x, y, 48, 24);
+      }
       break;
     case '9':
-      epdSetFrameMemoryXY(NINE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(NINE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(NINE, x, y, 48, 24);
+      }
       break;
     case ' ':
-      epdSetFrameMemoryXY(SPACE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(SPACE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(SPACE, x, y, 48, 24);
+      }
       break;
     case 'D':
-      epdSetFrameMemoryXY(DEGREE, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(DEGREE, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(DEGREE, x, y, 48, 24);
+      }
       break;
     case 'C':
-      epdSetFrameMemoryXY(C, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(C, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(C, x, y, 48, 24);
+      }
       break;
     case '-':
-      epdSetFrameMemoryXY(MINUS, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(MINUS, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(MINUS, x, y, 48, 24);
+      }
       break;
     case '.':
-      epdSetFrameMemoryXY(DOT, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(DOT, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(DOT, x, y, 48, 24);
+      }
       break;
     case 'E':
-      epdSetFrameMemoryXY(E, x, y, 48, 24);
+      if(isOld == 1) {
+        epdSetFrameMemoryXYBase(E, x, y, 48, 24);
+      } else {
+        epdSetFrameMemoryXY(E, x, y, 48, 24);
+      }
       break;
     }
 }

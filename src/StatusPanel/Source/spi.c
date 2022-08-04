@@ -79,10 +79,12 @@ void SPIInit(void) {
 
 void HalLcd_HW_Init(void){
   /* Perform reset */
-  LCD_ACTIVATE_RESET();
-  spi_HW_WaitUs(15000); // 15 ms
   LCD_RELEASE_RESET();
-  spi_HW_WaitUs(15000); // 15 us
+  spi_HW_WaitUs(20000); // 20 ms
+  LCD_ACTIVATE_RESET();
+  spi_HW_WaitUs(5000); // 5 ms
+  LCD_RELEASE_RESET();
+  spi_HW_WaitUs(20000); // 20 ms
 }
 
 
@@ -93,6 +95,14 @@ void spi_ConfigIO(void)
   HAL_CONFIG_IO_OUTPUT(HAL_LCD_RESET_PORT, HAL_LCD_RESET_PIN, 1);
   HAL_CONFIG_IO_OUTPUT(HAL_LCD_CS_PORT,    HAL_LCD_CS_PIN,    1);
   HAL_CONFIG_IO_INPUT (HAL_LCD_BUSY_PORT,  HAL_LCD_BUSY_PIN,  0);
+  
+    /* Set SPI on UART 1 alternative 2 */
+  PERCFG |= 0x02;
+
+  /* Configure clk, master out and master in lines */
+  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_CLK_PORT,  HAL_LCD_CLK_PIN);
+  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_MOSI_PORT, HAL_LCD_MOSI_PIN);
+  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_MISO_PORT, HAL_LCD_MISO_PIN);
 }
 
 
@@ -102,15 +112,6 @@ void spi_ConfigSPI(void)
 
    uint8 baud_exponent;
    uint8 baud_mantissa;
-
-  /* Set SPI on UART 1 alternative 2 */
-  PERCFG |= 0x02;
-
-  /* Configure clk, master out and master in lines */
-  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_CLK_PORT,  HAL_LCD_CLK_PIN);
-  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_MOSI_PORT, HAL_LCD_MOSI_PIN);
-  HAL_CONFIG_IO_PERIPHERAL(HAL_LCD_MISO_PORT, HAL_LCD_MISO_PIN);
-
 
   /* Set SPI speed to 1 MHz (the values assume system clk of 32MHz)
    * Confirm on board that this results in 1MHz spi clk.
